@@ -30,6 +30,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.heartsyncradio.hrv.HrvMetrics
 import com.heartsyncradio.model.ConnectionState
 import com.heartsyncradio.model.HeartRateData
 import com.heartsyncradio.model.PolarDeviceInfo
@@ -46,6 +47,7 @@ fun HomeScreen(
     batteryLevel: Int?,
     error: String?,
     permissionsGranted: Boolean,
+    hrvMetrics: HrvMetrics?,
     onStartScan: () -> Unit,
     onStopScan: () -> Unit,
     onConnectDevice: (String) -> Unit,
@@ -136,6 +138,7 @@ fun HomeScreen(
                 ConnectionState.CONNECTED -> {
                     HeartRateDisplay(
                         heartRateData = heartRateData,
+                        hrvMetrics = hrvMetrics,
                         modifier = Modifier.weight(1f)
                     )
                     Spacer(modifier = Modifier.height(16.dp))

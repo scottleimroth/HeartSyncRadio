@@ -2,6 +2,7 @@ package com.heartsyncradio
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import com.heartsyncradio.hrv.HrvMetrics
 import com.heartsyncradio.model.ConnectionState
 import com.heartsyncradio.model.HeartRateData
 import com.heartsyncradio.model.PolarDeviceInfo
@@ -16,6 +17,7 @@ fun App(
     batteryLevel: Int?,
     error: String?,
     permissionsGranted: Boolean,
+    hrvMetrics: HrvMetrics?,
     onStartScan: () -> Unit,
     onStopScan: () -> Unit,
     onConnectDevice: (String) -> Unit,
@@ -32,6 +34,7 @@ fun App(
             batteryLevel = batteryLevel,
             error = error,
             permissionsGranted = permissionsGranted,
+            hrvMetrics = hrvMetrics,
             onStartScan = onStartScan,
             onStopScan = onStopScan,
             onConnectDevice = onConnectDevice,

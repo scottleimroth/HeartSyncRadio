@@ -8,6 +8,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.heartsyncradio.hrv.HrvMetrics
 import com.heartsyncradio.di.AppModule
 import com.heartsyncradio.permission.BlePermissionHandler
 import com.heartsyncradio.viewmodel.HomeViewModel
@@ -44,6 +45,7 @@ class MainActivity : ComponentActivity() {
             val batteryLevel by viewModel.batteryLevel.collectAsStateWithLifecycle()
             val error by viewModel.error.collectAsStateWithLifecycle()
             val permissionsGranted by viewModel.permissionsGranted.collectAsStateWithLifecycle()
+            val hrvMetrics by viewModel.hrvMetrics.collectAsStateWithLifecycle()
 
             App(
                 connectionState = connectionState,
@@ -53,6 +55,7 @@ class MainActivity : ComponentActivity() {
                 batteryLevel = batteryLevel,
                 error = error,
                 permissionsGranted = permissionsGranted,
+                hrvMetrics = hrvMetrics,
                 onStartScan = viewModel::startScan,
                 onStopScan = viewModel::stopScan,
                 onConnectDevice = viewModel::connectToDevice,

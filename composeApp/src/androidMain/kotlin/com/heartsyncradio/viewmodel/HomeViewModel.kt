@@ -1,6 +1,7 @@
 package com.heartsyncradio.viewmodel
 
 import androidx.lifecycle.ViewModel
+import com.heartsyncradio.hrv.HrvMetrics
 import com.heartsyncradio.model.ConnectionState
 import com.heartsyncradio.model.HeartRateData
 import com.heartsyncradio.model.PolarDeviceInfo
@@ -19,6 +20,7 @@ class HomeViewModel(
     val isScanning: StateFlow<Boolean> = polarManager.isScanning
     val batteryLevel: StateFlow<Int?> = polarManager.batteryLevel
     val error: StateFlow<String?> = polarManager.error
+    val hrvMetrics: StateFlow<HrvMetrics?> = polarManager.hrvMetrics
 
     private val _permissionsGranted = MutableStateFlow(false)
     val permissionsGranted: StateFlow<Boolean> = _permissionsGranted.asStateFlow()

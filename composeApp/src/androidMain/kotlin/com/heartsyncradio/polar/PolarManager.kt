@@ -2,6 +2,8 @@ package com.heartsyncradio.polar
 
 import android.content.Context
 import android.util.Log
+import com.heartsyncradio.hrv.HrvMetrics
+import com.heartsyncradio.hrv.HrvProcessor
 import com.heartsyncradio.model.ConnectionState
 import com.heartsyncradio.model.HeartRateData
 import com.heartsyncradio.model.PolarDeviceInfo
@@ -34,6 +36,7 @@ class PolarManager(context: Context) {
 
     private var scanDisposable: Disposable? = null
     private var hrDisposable: Disposable? = null
+    private val hrvProcessor = HrvProcessor()
 
     private val _connectionState = MutableStateFlow(ConnectionState.DISCONNECTED)
     val connectionState: StateFlow<ConnectionState> = _connectionState.asStateFlow()
@@ -55,6 +58,9 @@ class PolarManager(context: Context) {
 
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
+
+    private val _hrvMetrics = MutableStateFlow<HrvMetrics?>(null)
+    val hrvMetrics: StateFlow<HrvMetrics?> = _hrvMetrics.asStateFlow()
 
     init {
         api.setApiCallback(object : PolarBleApiCallback() {
@@ -85,6 +91,8 @@ class PolarManager(context: Context) {
                 _connectedDeviceId.value = null
                 _heartRateData.value = null
                 _batteryLevel.value = null
+                _hrvMetrics.value = null
+                hrvProcessor.reset()
             }
 
             override fun batteryLevelReceived(deviceId: String, level: Int) {
@@ -192,6 +200,14 @@ class PolarManager(context: Context) {
                             contactStatus = sample.contactStatus,
                             timestamp = System.currentTimeMillis()
                         )
+
+                        // Feed RR intervals into HRV processor
+                        if (sample.rrsMs.isNotEmpty()) {
+                            val metrics = hrvProcessor.addRrIntervals(sample.rrsMs)
+                            if (metrics != null) {
+                                _hrvMetrics.value = metrics
+                            }
+                        }
                     }
                 },
                 { error ->
