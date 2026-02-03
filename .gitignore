@@ -33,9 +33,21 @@ iosApp/iosApp.xcodeproj/project.xcworkspace/xcuserdata/
 iosApp/Pods/
 DerivedData/
 
+# Credentials - NEVER commit
+CREDENTIALS.md
+.env
+.env.*
+*.key
+*.pem
+*.p12
+*.jks
+
 # OS files
 .DS_Store
 Thumbs.db
+
+# IDE
+.vscode/settings.json
 
 # Claude
 .claude/
