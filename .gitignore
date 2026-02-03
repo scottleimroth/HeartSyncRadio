@@ -1,0 +1,41 @@
+# Gradle
+.gradle/
+build/
+**/build/
+!gradle-wrapper.jar
+
+# Kotlin
+.kotlin/
+
+# Local configuration
+local.properties
+
+# IntelliJ IDEA / Android Studio
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+.fleet/
+
+# Android
+*.apk
+*.aab
+*.dex
+*.class
+captures/
+*.hprof
+
+# iOS / Xcode
+iosApp/iosApp.xcworkspace/xcuserdata/
+iosApp/iosApp.xcodeproj/xcuserdata/
+iosApp/iosApp.xcodeproj/project.xcworkspace/xcuserdata/
+iosApp/Pods/
+DerivedData/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Claude
+.claude/
