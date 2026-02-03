@@ -123,3 +123,5 @@
 - PhysioNet Subject 000 (53M, healthy) scipy reference values for 5-min segment: RMSSD=52.62ms, MeanHR=61.23bpm, LF=273.53ms², HF=283.39ms²
 - Welch PSD params matching scipy: nperseg=256, noverlap=128, window='hann', fs=4.0Hz
 - JAVA_HOME needs to be set to Android Studio JBR for Gradle: `C:\Program Files\Android\Android Studio\jbr`
+- **IMPORTANT: Always commit and push to the private GitHub repo before finishing a session**
+- Remote not yet configured — run: `git remote add origin <repo-url> && git push -u origin main`
