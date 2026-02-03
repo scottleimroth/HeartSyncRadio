@@ -1,45 +1,43 @@
 package com.heartsyncradio
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import com.heartsyncradio.model.ConnectionState
+import com.heartsyncradio.model.HeartRateData
+import com.heartsyncradio.model.PolarDeviceInfo
+import com.heartsyncradio.ui.HomeScreen
 
 @Composable
-fun App() {
+fun App(
+    connectionState: ConnectionState,
+    heartRateData: HeartRateData?,
+    scannedDevices: List<PolarDeviceInfo>,
+    isScanning: Boolean,
+    batteryLevel: Int?,
+    error: String?,
+    permissionsGranted: Boolean,
+    onStartScan: () -> Unit,
+    onStopScan: () -> Unit,
+    onConnectDevice: (String) -> Unit,
+    onDisconnect: () -> Unit,
+    onClearError: () -> Unit,
+    onRequestPermissions: () -> Unit
+) {
     MaterialTheme {
-        Surface(
-            modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.background
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Text(
-                    text = "HeartSync Radio",
-                    style = MaterialTheme.typography.headlineLarge,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "Cardiac Coherence meets Music",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
+        HomeScreen(
+            connectionState = connectionState,
+            heartRateData = heartRateData,
+            scannedDevices = scannedDevices,
+            isScanning = isScanning,
+            batteryLevel = batteryLevel,
+            error = error,
+            permissionsGranted = permissionsGranted,
+            onStartScan = onStartScan,
+            onStopScan = onStopScan,
+            onConnectDevice = onConnectDevice,
+            onDisconnect = onDisconnect,
+            onClearError = onClearError,
+            onRequestPermissions = onRequestPermissions
+        )
     }
 }

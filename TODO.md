@@ -9,9 +9,9 @@ This document outlines the development plan for the HeartSync Radio application.
 
 ## 2. Core Feature Implementation
 
-- [ ] **Polar H10 Integration:**
-    - [ ] Integrate the Polar SDK for Android and iOS.
-    - [ ] Implement logic to search for, connect to, and receive data from the H10 sensor.
+- [x] **Polar H10 Integration:**
+    - [x] Integrate the Polar SDK for Android and iOS.
+    - [x] Implement logic to search for, connect to, and receive data from the H10 sensor.
 - [ ] **HRV & Coherence Calculation:**
     - [ ] Process raw RR-intervals from the Polar SDK.
     - [ ] Implement artifact removal to clean the data.
@@ -26,8 +26,8 @@ This document outlines the development plan for the HeartSync Radio application.
 
 - [ ] **Onboarding:**
     - [ ] Create a screen to connect to Spotify.
-- [ ] **Home Screen:**
-    - [ ] Design a central hub to connect to the Polar H10 sensor and start a new "Coherence Session."
+- [x] **Home Screen:**
+    - [x] Design a central hub to connect to the Polar H10 sensor and start a new "Coherence Session."
 - [ ] **Session Screen:**
     - [ ] Display the currently playing track.
     - [ ] Show a real-time graph of the user's heart rate and coherence score.
