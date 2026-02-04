@@ -2,17 +2,14 @@
 
 ## Last Session
 
-- **Date:** 2026-02-03
-- **Summary:** Implemented HRV processing pipeline with cubic spline artifact correction, spectral analysis, and unit tests validated against PhysioNet data
+- **Date:** 2026-02-04
+- **Summary:** Project administration — README with download badge, GitHub Release setup, global Claude Code instructions, berrima-diesel-app roadmap
 - **Key changes:**
-  - Rewrote ArtifactDetector to use cubic spline interpolation (per Quigley spec) instead of median substitution. Two-pass: detect artifacts, then interpolate. No deletions — output length always matches input.
-  - Added LF (0.04-0.15 Hz) and HF (0.15-0.40 Hz) band power to CoherenceCalculator and HrvMetrics. No LF/HF ratio (scientifically unsound).
-  - Fixed bug in CoherenceCalculator where frequency resolution was computed from total data length instead of Welch segment size (was causing wrong bin mappings).
-  - Added proper Welch PSD normalization (2/(fs*S2) one-sided) so band powers output in ms²/Hz units matching scipy.signal.welch.
-  - Created 40 unit tests: RMSSD, ArtifactDetector (including spline accuracy), FFT (Parseval's theorem), CoherenceCalculator (synthetic sine modulations), HrvProcessor (incremental feeding), PhysioNet validation (Subject 000 real RR data).
-  - Downloaded PhysioNet "RR Interval Time Series from Healthy Subjects" (Subject 000, 5-min segment) and computed scipy reference values for cross-validation.
-  - Added kotlin-test dependency to commonTest source set.
-- **Stopped at:** PSD normalization fix applied but tests not yet re-run. PhysioNet validation test for spectral powers needs verification after the normalization fix.
+  - Created README.md with APK download badge linking to GitHub Releases
+  - Set up GitHub Release infrastructure for APK distribution
+  - Configured global CLAUDE.md at ~/.claude/ with session discipline, commit style, testing, and branch strategy rules
+  - Wrote comprehensive 6-phase development roadmap for berrima-diesel-app
+- **Stopped at:** HRV pipeline validation still pending — PSD normalization fix applied last session but tests not re-run. Next code task: re-run all 40 tests, verify PhysioNet spectral powers, then wire HRV metrics into UI.
 - **Blockers:** None. Will need Spotify Developer credentials when reaching Spotify integration.
 
 ---
@@ -92,6 +89,8 @@
 - [x] Add PSD normalization for correct ms²/Hz units (2026-02-03)
 - [x] Write 40 unit tests including PhysioNet real-data validation (2026-02-03)
 - [x] Download PhysioNet Subject 000 RR data and compute scipy reference values (2026-02-03)
+- [x] Create README.md with download badge and project documentation (2026-02-04)
+- [x] Set up GitHub Release for APK distribution (2026-02-04)
 
 ---
 
@@ -124,4 +123,4 @@
 - Welch PSD params matching scipy: nperseg=256, noverlap=128, window='hann', fs=4.0Hz
 - JAVA_HOME needs to be set to Android Studio JBR for Gradle: `C:\Program Files\Android\Android Studio\jbr`
 - **IMPORTANT: Always commit and push to the private GitHub repo before finishing a session**
-- Remote not yet configured — run: `git remote add origin <repo-url> && git push -u origin main`
+- Remote configured: `https://github.com/scottleimroth/HeartSyncRadio.git`
