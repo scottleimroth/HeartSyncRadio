@@ -50,30 +50,53 @@
     - [ ] Consider tightening spectral power tolerances if results are close
     - [ ] Wire HRV metrics into the UI (HomeScreen / HeartRateDisplay)
 2. [ ] **Spotify Integration:**
-    - [ ] Integrate the Spotify Web API
-    - [ ] Implement OAuth for user authentication
+    - [ ] Register Spotify Developer app, get client ID + redirect URI
+    - [ ] Implement Spotify OAuth (PKCE flow for mobile — no client secret needed)
     - [ ] Fetch user playlists and track information
-    - [ ] Create new playlists
-3. [ ] **Session Screen:**
-    - [ ] Display the currently playing track
-    - [ ] Show a real-time graph of heart rate and coherence score
-4. [ ] **Backend/Data Storage:**
-    - [ ] Set up SQLDelight local database for song-coherence score relationships
-5. [ ] **Playlist Generation Logic:**
-    - [ ] Analyze stored data to find songs with highest coherence scores
-    - [ ] Use Spotify API to create new playlist with these songs
+    - [ ] Detect currently playing track (Spotify Web API `player/currently-playing`)
+    - [ ] Create new playlists via API
+3. [ ] **Music Session Mode:**
+    - [ ] Session screen: Start/End Session button, real-time coherence graph, current track display
+    - [ ] 60-second baseline period (no music) to establish resting coherence before songs play
+    - [ ] 15-second settle-in exclusion at start of each new song (cardiac transition response)
+    - [ ] Auto-detect song changes via Spotify API polling (no per-song button needed)
+    - [ ] Minimum 60 seconds of listening per song for a valid coherence reading (Task Force HRV guideline)
+    - [ ] If song skipped before 60s: toast "Skipped — need at least 1 min for a reading"
+    - [ ] Per-song feedback card after each track: coherence score with colour rating (red/amber/green)
+    - [ ] Session summary on End: songs analysed, average coherence, top song, movement warnings
+4. [ ] **Movement Detection:**
+    - [ ] Phone accelerometer monitoring via Android SensorManager (TYPE_LINEAR_ACCELERATION)
+    - [ ] Rolling movement score: flag when acceleration exceeds resting threshold
+    - [ ] HR anomaly detection: flag sudden HR spikes (>30 BPM above rolling average) not explained by music change
+    - [ ] Combine both signals: accelerometer catches phone movement, HR catches body movement when phone is stationary
+    - [ ] Per-song movement badge: "Movement detected — score may be less accurate" (data kept, weighted lower)
+    - [ ] If excessive movement throughout song: "Too much movement — no reading recorded"
+5. [ ] **Song-Coherence Database:**
+    - [ ] Set up SQLDelight local database
+    - [ ] Schema: track_id, track_name, artist, avg_coherence, peak_coherence, avg_hr, rmssd, duration_listened, baseline_coherence, movement_confidence, session_date
+    - [ ] Store per-song coherence results after each valid reading
+    - [ ] Track improvement over multiple sessions
+6. [ ] **Playlist Generation:**
+    - [ ] Progress indicator: "8/10 songs — almost ready for your first playlist!"
+    - [ ] Minimum 10 songs with valid readings before first playlist can be generated
+    - [ ] "Create Coherence Playlist" button: takes top-scoring songs, creates Spotify playlist
+    - [ ] Running leaderboard: "Your Top 5 Coherence Songs" visible in app
+    - [ ] Weight scores by movement confidence (clean readings count more)
+    - [ ] Insights: "Your coherence is X% higher with slower tempo songs" (after 20+ songs)
 
 ---
 
 ## TODO - Nice to Have
 
-- [ ] Onboarding screen for Spotify connection
-- [ ] Playlist Generation screen to display "Coherence Playlists"
+- [ ] Onboarding flow: Polar H10 pairing guide → Spotify login → first session walkthrough
+- [ ] Genre/tempo analysis: correlate Spotify audio features (tempo, energy, valence) with coherence
+- [ ] Re-listen mode: replay top coherence songs and see if scores hold across sessions
 - [ ] iOS support (KMP structure ready, targets commented out)
 - [ ] Dark mode / theme customization
 - [ ] Export coherence session data (CSV/JSON)
-- [ ] Historical session tracking and trends
-- [ ] App icon and branding assets
+- [ ] Historical session tracking and trends chart
+- [ ] App icon and branding assets (user creating)
+- [ ] Session reminders / streak tracking ("Listen for 10 minutes daily")
 
 ---
 
@@ -109,6 +132,12 @@
 | No LF/HF ratio | Scientifically unsound; individual LF and HF band powers are valid | 2026-02-03 |
 | Pure Kotlin FFT (Cooley-Tukey) | KMP commonMain can't use platform FFT libs; keeps code cross-platform | 2026-02-03 |
 | HeartMath coherence algorithm | Peak power ratio in 0.04-0.26 Hz band; 64s sliding window | 2026-02-03 |
+| 60s minimum per song | Task Force HRV guidelines: 60s minimum for reliable short-term metrics; aligns with 64s coherence window | 2026-02-04 |
+| 15s settle-in exclusion | Cardiac response to new auditory stimulus stabilises in ~10-15s; 30s too aggressive for session flow | 2026-02-04 |
+| Dual movement detection | Phone accelerometer + HR anomaly; neither alone is sufficient (phone may not be on person) | 2026-02-04 |
+| Spotify PKCE OAuth | Mobile app — no backend server to hold client secret; PKCE flow is standard for native apps | 2026-02-04 |
+| 10 songs minimum for playlist | Fewer than 10 songs gives unreliable ranking; 10-15 is minimum viable, 20-30 is solid | 2026-02-04 |
+| Soft movement warnings | Don't discard data on movement — flag it and weight lower; user shouldn't feel penalised | 2026-02-04 |
 
 ---
 

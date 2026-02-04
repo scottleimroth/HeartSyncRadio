@@ -194,10 +194,13 @@ class PolarManager(context: Context) {
                     val samples = hrData.samples
                     if (samples.isNotEmpty()) {
                         val sample = samples.last()
+                        // Polar SDK contactStatus can report false even with valid HR/RR data.
+                        // If HR > 0, the sensor clearly has skin contact.
+                        val hasContact = sample.contactStatus || sample.hr > 0
                         _heartRateData.value = HeartRateData(
                             hr = sample.hr,
                             rrIntervals = sample.rrsMs,
-                            contactStatus = sample.contactStatus,
+                            contactStatus = hasContact,
                             timestamp = System.currentTimeMillis()
                         )
 
