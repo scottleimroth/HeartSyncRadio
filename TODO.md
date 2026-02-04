@@ -2,18 +2,21 @@
 
 ## Last Session
 
-- **Date:** 2026-02-03
-- **Summary:** Implemented HRV processing pipeline with cubic spline artifact correction, spectral analysis, and unit tests validated against PhysioNet data
+- **Date:** 2026-02-04
+- **Summary:** Built device chooser UI, app icon, HRV methodology document, and improved spectral accuracy
 - **Key changes:**
-  - Rewrote ArtifactDetector to use cubic spline interpolation (per Quigley spec) instead of median substitution. Two-pass: detect artifacts, then interpolate. No deletions — output length always matches input.
-  - Added LF (0.04-0.15 Hz) and HF (0.15-0.40 Hz) band power to CoherenceCalculator and HrvMetrics. No LF/HF ratio (scientifically unsound).
-  - Fixed bug in CoherenceCalculator where frequency resolution was computed from total data length instead of Welch segment size (was causing wrong bin mappings).
-  - Added proper Welch PSD normalization (2/(fs*S2) one-sided) so band powers output in ms²/Hz units matching scipy.signal.welch.
-  - Created 40 unit tests: RMSSD, ArtifactDetector (including spline accuracy), FFT (Parseval's theorem), CoherenceCalculator (synthetic sine modulations), HrvProcessor (incremental feeding), PhysioNet validation (Subject 000 real RR data).
-  - Downloaded PhysioNet "RR Interval Time Series from Healthy Subjects" (Subject 000, 5-min segment) and computed scipy reference values for cross-validation.
-  - Added kotlin-test dependency to commonTest source set.
-- **Stopped at:** PSD normalization fix applied but tests not yet re-run. PhysioNet validation test for spectral powers needs verification after the normalization fix.
-- **Blockers:** None. Will need Spotify Developer credentials when reaching Spotify integration.
+  - Added device chooser UI: "Choose Your Sensor" screen with Polar H10 and Generic BLE HR Monitor cards, plus "Change Device" button
+  - Created HrDeviceManager interface and GenericBleManager for multi-device support
+  - Updated HomeViewModel with flatMapLatest for dynamic device manager switching
+  - Generated Android launcher icons from HeartSyncRadio logo (all mipmap densities + adaptive icon)
+  - Wrote HRV_METHODOLOGY.md: comprehensive scientific methodology document for external scrutiny
+  - Switched spectral integration from rectangular to trapezoidal rule (LF error 23%→5.8%, HF error 16.5%→8.8%)
+  - Tested cubic spline resampling — proved worse (HF error 78.9%), reverted to linear with evidence-based rationale in code
+  - Extracted CubicSpline.kt shared utility from ArtifactDetector (eliminated code duplication)
+  - Tightened PhysioNet spectral power test tolerances from 50% to 15%
+  - All 40 HRV tests passing
+- **Stopped at:** All code complete. Spotify integration is next but blocked on developer registration.
+- **Blockers:** Spotify Developer registration frozen since December 2025. Cannot proceed with music integration until access is granted.
 
 ---
 
@@ -22,16 +25,20 @@
 ### Working Features
 - Compose Multiplatform project builds successfully (Android target)
 - BLE permission request flow (Android 12+ and older)
+- Device chooser UI: Polar H10 or Generic BLE HR Monitor selection
 - Polar H10 device scanning (finds nearby Polar devices)
+- Generic BLE HR sensor scanning and connection
 - Device connection with auto HR streaming
-- Live heart rate (BPM) and RR interval display
+- Live heart rate (BPM), RR intervals, coherence score, and RMSSD display
 - Connection status + battery level display
 - Error handling and disconnect
 - HRV processing pipeline: artifact detection (cubic spline), RMSSD, coherence score, LF/HF band powers
-- 40 unit tests (34 passing pre-normalization fix, 6 PhysioNet validation tests added)
+- 40 unit tests all passing (PhysioNet spectral validation within 15% of scipy reference)
+- App icon (generated from logo, adaptive icon support)
+- HRV_METHODOLOGY.md scientific methodology document
 
 ### In Progress
-- HRV pipeline validation (PSD normalization fix needs test run)
+- Spotify integration (blocked on developer registration)
 
 ### Known Bugs
 - None identified yet (untested on physical device)
@@ -40,15 +47,15 @@
 
 ## TODO - Priority
 
-1. [ ] **HRV & Coherence — Finish Validation:**
+1. [x] **HRV & Coherence — Validation Complete:**
     - [x] Implement artifact removal with cubic spline interpolation (Quigley spec)
     - [x] Calculate coherence score based on PSD (HeartMath algorithm)
     - [x] Add LF and HF band powers (no ratio)
     - [x] Fix PSD normalization to match scipy (ms²/Hz units)
-    - [ ] Re-run all 40 tests after PSD normalization fix
-    - [ ] Verify PhysioNet validation test spectral powers are within tolerance of scipy reference (LF: 273.5 ms², HF: 283.4 ms²)
-    - [ ] Consider tightening spectral power tolerances if results are close
-    - [ ] Wire HRV metrics into the UI (HomeScreen / HeartRateDisplay)
+    - [x] Re-run all 40 tests after PSD normalization fix — all pass
+    - [x] PhysioNet spectral powers within 15% of scipy reference (LF: 5.8% error, HF: 8.8% error)
+    - [x] Tightened spectral power tolerances from 50% to 15%
+    - [x] HRV metrics displayed in UI (coherence score + RMSSD)
 2. [ ] **Spotify Integration:**
     - [ ] Register Spotify Developer app, get client ID + redirect URI
     - [ ] Implement Spotify OAuth (PKCE flow for mobile — no client secret needed)
@@ -95,7 +102,7 @@
 - [ ] Dark mode / theme customization
 - [ ] Export coherence session data (CSV/JSON)
 - [ ] Historical session tracking and trends chart
-- [ ] App icon and branding assets (user creating)
+- [x] App icon and branding assets (generated from logo)
 - [ ] Session reminders / streak tracking ("Listen for 10 minutes daily")
 
 ---
@@ -115,6 +122,14 @@
 - [x] Add PSD normalization for correct ms²/Hz units (2026-02-03)
 - [x] Write 40 unit tests including PhysioNet real-data validation (2026-02-03)
 - [x] Download PhysioNet Subject 000 RR data and compute scipy reference values (2026-02-03)
+- [x] Device chooser UI: Polar H10 / Generic BLE HR Monitor selection (2026-02-04)
+- [x] HrDeviceManager interface + GenericBleManager for multi-device support (2026-02-04)
+- [x] HomeViewModel flatMapLatest for dynamic device manager switching (2026-02-04)
+- [x] App icon from logo — all mipmap densities + adaptive icon (2026-02-04)
+- [x] HRV_METHODOLOGY.md scientific methodology document (2026-02-04)
+- [x] Switch spectral integration to trapezoidal rule (LF error 23%→5.8%, HF 16.5%→8.8%) (2026-02-04)
+- [x] Extract CubicSpline.kt shared utility from ArtifactDetector (2026-02-04)
+- [x] Tighten PhysioNet spectral test tolerances from 50% to 15% (2026-02-04)
 
 ---
 
@@ -132,6 +147,9 @@
 | No LF/HF ratio | Scientifically unsound; individual LF and HF band powers are valid | 2026-02-03 |
 | Pure Kotlin FFT (Cooley-Tukey) | KMP commonMain can't use platform FFT libs; keeps code cross-platform | 2026-02-03 |
 | HeartMath coherence algorithm | Peak power ratio in 0.04-0.26 Hz band; 64s sliding window | 2026-02-03 |
+| Trapezoidal integration for band power | More accurate than rectangular; reduced spectral error by ~60% | 2026-02-04 |
+| Linear resampling over cubic spline | Spline overshoots on irregular RR data; HF error 8.8% vs 78.9% with spline | 2026-02-04 |
+| HrDeviceManager interface | Abstracts Polar SDK vs standard BLE; enables device chooser | 2026-02-04 |
 | 60s minimum per song | Task Force HRV guidelines: 60s minimum for reliable short-term metrics; aligns with 64s coherence window | 2026-02-04 |
 | 15s settle-in exclusion | Cardiac response to new auditory stimulus stabilises in ~10-15s; 30s too aggressive for session flow | 2026-02-04 |
 | Dual movement detection | Phone accelerometer + HR anomaly; neither alone is sufficient (phone may not be on person) | 2026-02-04 |
@@ -153,4 +171,4 @@
 - Welch PSD params matching scipy: nperseg=256, noverlap=128, window='hann', fs=4.0Hz
 - JAVA_HOME needs to be set to Android Studio JBR for Gradle: `C:\Program Files\Android\Android Studio\jbr`
 - **IMPORTANT: Always commit and push to the private GitHub repo before finishing a session**
-- Remote not yet configured — run: `git remote add origin <repo-url> && git push -u origin main`
+- Remote configured: private GitHub repo HeartSyncRadio

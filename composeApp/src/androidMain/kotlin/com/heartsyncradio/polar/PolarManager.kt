@@ -14,11 +14,12 @@ import com.polar.sdk.api.model.PolarDeviceInfo as SdkPolarDeviceInfo
 import com.polar.sdk.api.model.PolarHrData
 import io.reactivex.rxjava3.disposables.Disposable
 import io.reactivex.rxjava3.schedulers.Schedulers
+import com.heartsyncradio.ble.HrDeviceManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-class PolarManager(context: Context) {
+class PolarManager(context: Context) : HrDeviceManager {
 
     companion object {
         private const val TAG = "PolarManager"
@@ -39,28 +40,28 @@ class PolarManager(context: Context) {
     private val hrvProcessor = HrvProcessor()
 
     private val _connectionState = MutableStateFlow(ConnectionState.DISCONNECTED)
-    val connectionState: StateFlow<ConnectionState> = _connectionState.asStateFlow()
+    override val connectionState: StateFlow<ConnectionState> = _connectionState.asStateFlow()
 
     private val _connectedDeviceId = MutableStateFlow<String?>(null)
-    val connectedDeviceId: StateFlow<String?> = _connectedDeviceId.asStateFlow()
+    override val connectedDeviceId: StateFlow<String?> = _connectedDeviceId.asStateFlow()
 
     private val _heartRateData = MutableStateFlow<HeartRateData?>(null)
-    val heartRateData: StateFlow<HeartRateData?> = _heartRateData.asStateFlow()
+    override val heartRateData: StateFlow<HeartRateData?> = _heartRateData.asStateFlow()
 
     private val _batteryLevel = MutableStateFlow<Int?>(null)
-    val batteryLevel: StateFlow<Int?> = _batteryLevel.asStateFlow()
+    override val batteryLevel: StateFlow<Int?> = _batteryLevel.asStateFlow()
 
     private val _scannedDevices = MutableStateFlow<List<PolarDeviceInfo>>(emptyList())
-    val scannedDevices: StateFlow<List<PolarDeviceInfo>> = _scannedDevices.asStateFlow()
+    override val scannedDevices: StateFlow<List<PolarDeviceInfo>> = _scannedDevices.asStateFlow()
 
     private val _isScanning = MutableStateFlow(false)
-    val isScanning: StateFlow<Boolean> = _isScanning.asStateFlow()
+    override val isScanning: StateFlow<Boolean> = _isScanning.asStateFlow()
 
     private val _error = MutableStateFlow<String?>(null)
-    val error: StateFlow<String?> = _error.asStateFlow()
+    override val error: StateFlow<String?> = _error.asStateFlow()
 
     private val _hrvMetrics = MutableStateFlow<HrvMetrics?>(null)
-    val hrvMetrics: StateFlow<HrvMetrics?> = _hrvMetrics.asStateFlow()
+    override val hrvMetrics: StateFlow<HrvMetrics?> = _hrvMetrics.asStateFlow()
 
     init {
         api.setApiCallback(object : PolarBleApiCallback() {
@@ -114,7 +115,7 @@ class PolarManager(context: Context) {
         })
     }
 
-    fun startScan() {
+    override fun startScan() {
         scanDisposable?.dispose()
         _scannedDevices.value = emptyList()
         _isScanning.value = true
@@ -147,13 +148,13 @@ class PolarManager(context: Context) {
             )
     }
 
-    fun stopScan() {
+    override fun stopScan() {
         scanDisposable?.dispose()
         scanDisposable = null
         _isScanning.value = false
     }
 
-    fun connectToDevice(deviceId: String) {
+    override fun connectToDevice(deviceId: String) {
         stopScan()
         _connectionState.value = ConnectionState.CONNECTING
         try {
@@ -165,7 +166,7 @@ class PolarManager(context: Context) {
         }
     }
 
-    fun disconnectFromDevice() {
+    override fun disconnectFromDevice() {
         val deviceId = _connectedDeviceId.value ?: return
         _connectionState.value = ConnectionState.DISCONNECTING
         try {
@@ -175,11 +176,11 @@ class PolarManager(context: Context) {
         }
     }
 
-    fun clearError() {
+    override fun clearError() {
         _error.value = null
     }
 
-    fun shutDown() {
+    override fun shutDown() {
         scanDisposable?.dispose()
         hrDisposable?.dispose()
         api.shutDown()

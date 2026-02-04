@@ -84,22 +84,21 @@ class PhysioNetValidationTest {
         val cleanResult = ArtifactDetector.clean(physionetRR)
         val spectral = CoherenceCalculator.calculate(cleanResult.cleanedRR)
 
-        // LF and HF should be in the right ballpark
-        // We allow wider tolerance for frequency domain (up to 50%) because:
-        // - Our Welch implementation uses a different integration method (sum * df vs trapezoid)
-        // - Resampling interpolation may differ slightly
-        // - Windowing edge effects differ between implementations
+        // LF and HF should be close to scipy reference values.
+        // Remaining differences (~6-9%) are due to:
+        // - Linear vs cubic spline resampling to uniform grid
+        // - Slight differences in bin boundary rounding at band edges
         assertTrue(spectral.lfPower > 0.0, "LF power should be positive")
         assertTrue(spectral.hfPower > 0.0, "HF power should be positive")
 
         val lfRelError = abs(spectral.lfPower - refLfPower) / refLfPower
-        assertTrue(lfRelError < 0.50,
-            "LF power should be within 50% of scipy reference ($refLfPower). " +
+        assertTrue(lfRelError < 0.15,
+            "LF power should be within 15% of scipy reference ($refLfPower). " +
                     "Got ${spectral.lfPower} (${lfRelError * 100}% error)")
 
         val hfRelError = abs(spectral.hfPower - refHfPower) / refHfPower
-        assertTrue(hfRelError < 0.50,
-            "HF power should be within 50% of scipy reference ($refHfPower). " +
+        assertTrue(hfRelError < 0.15,
+            "HF power should be within 15% of scipy reference ($refHfPower). " +
                     "Got ${spectral.hfPower} (${hfRelError * 100}% error)")
     }
 
@@ -170,4 +169,5 @@ class PhysioNetValidationTest {
         assertTrue(lastMetrics.meanHr in 50.0..90.0)
         assertTrue(lastMetrics.rmssd > 0.0)
     }
+
 }

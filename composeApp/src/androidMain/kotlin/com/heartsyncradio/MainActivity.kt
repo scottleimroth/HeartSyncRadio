@@ -8,8 +8,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.heartsyncradio.hrv.HrvMetrics
 import com.heartsyncradio.di.AppModule
+import com.heartsyncradio.di.DeviceMode
 import com.heartsyncradio.permission.BlePermissionHandler
 import com.heartsyncradio.viewmodel.HomeViewModel
 
@@ -46,6 +46,7 @@ class MainActivity : ComponentActivity() {
             val error by viewModel.error.collectAsStateWithLifecycle()
             val permissionsGranted by viewModel.permissionsGranted.collectAsStateWithLifecycle()
             val hrvMetrics by viewModel.hrvMetrics.collectAsStateWithLifecycle()
+            val selectedDeviceMode by viewModel.selectedDeviceMode.collectAsStateWithLifecycle()
 
             App(
                 connectionState = connectionState,
@@ -56,6 +57,18 @@ class MainActivity : ComponentActivity() {
                 error = error,
                 permissionsGranted = permissionsGranted,
                 hrvMetrics = hrvMetrics,
+                selectedDeviceMode = selectedDeviceMode,
+                onSelectDeviceMode = { mode ->
+                    val deviceMode = when (mode) {
+                        "polar" -> DeviceMode.POLAR
+                        else -> DeviceMode.GENERIC_BLE
+                    }
+                    val manager = AppModule.switchMode(this, deviceMode)
+                    viewModel.switchManager(manager, mode)
+                },
+                onChangeDeviceMode = {
+                    viewModel.clearDeviceSelection()
+                },
                 onStartScan = viewModel::startScan,
                 onStopScan = viewModel::stopScan,
                 onConnectDevice = viewModel::connectToDevice,

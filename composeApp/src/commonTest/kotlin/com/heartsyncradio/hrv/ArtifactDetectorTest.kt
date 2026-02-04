@@ -97,13 +97,13 @@ class ArtifactDetectorTest {
         // If good points form a line, spline should exactly reproduce it
         val x = doubleArrayOf(0.0, 1.0, 2.0, 3.0, 4.0)
         val y = doubleArrayOf(100.0, 200.0, 300.0, 400.0, 500.0)
-        val spline = ArtifactDetector.naturalCubicSpline(x, y)
+        val spline = CubicSpline.fit(x, y)
 
         // Evaluate at midpoints
         for (i in 0..3) {
             val midX = i + 0.5
             val expected = 100.0 + midX * 100.0
-            val actual = ArtifactDetector.evaluateSpline(spline, x, midX)
+            val actual = CubicSpline.evaluate(spline, x, midX)
             assertTrue(abs(actual - expected) < 0.01,
                 "Spline should be exact for linear data at $midX: expected $expected, got $actual")
         }
@@ -114,11 +114,11 @@ class ArtifactDetectorTest {
         // Natural cubic spline should exactly reproduce quadratic polynomials
         val x = doubleArrayOf(0.0, 1.0, 2.0, 3.0, 4.0, 5.0)
         val y = DoubleArray(6) { i -> (i * i).toDouble() }  // y = x²
-        val spline = ArtifactDetector.naturalCubicSpline(x, y)
+        val spline = CubicSpline.fit(x, y)
 
         val testX = 2.5
         val expected = testX * testX  // 6.25
-        val actual = ArtifactDetector.evaluateSpline(spline, x, testX)
+        val actual = CubicSpline.evaluate(spline, x, testX)
         assertTrue(abs(actual - expected) < 0.1,
             "Spline should closely approximate quadratic at $testX: expected $expected, got $actual")
     }
