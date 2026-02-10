@@ -2,7 +2,7 @@
 
 [![Download APK](https://img.shields.io/badge/Download-APK-green?style=for-the-badge)](https://github.com/scottleimroth/hrvxo/releases/latest/download/HrvXo.apk)
 
-A biofeedback-driven music app that uses your Polar H10 heart rate monitor to generate music playlists based on cardiac coherence.
+A biofeedback-driven music app that uses your Polar H10 heart rate monitor to generate YouTube Music playlists based on cardiac coherence.
 
 ## Overview
 
@@ -15,6 +15,7 @@ HrvXo connects to a Polar H10 chest strap via Bluetooth LE, processes real-time 
 - **Coherence Scoring** — HeartMath algorithm with Welch's method PSD estimation
 - **Real-time Display** — Live BPM, coherence %, RMSSD, and RR intervals
 - **Battery Monitoring** — Shows Polar H10 battery level while connected
+- **YouTube Music Integration** — Seamless playlist generation using ytmusicapi
 
 ## Getting Started
 
@@ -74,16 +75,23 @@ hrvxo/
 
 ## Tech Stack
 
+### Mobile App
 - **Kotlin Multiplatform** with Compose Multiplatform
 - **Polar BLE SDK** 6.14.0 for heart rate sensor communication
 - **RxJava3** bridged to Kotlin StateFlows
 - **AndroidX Lifecycle** for ViewModel integration
 - **Material3** design system
 
+### Backend
+- **Python FastAPI** hosted on Fly.io
+- **ytmusicapi** for YouTube Music playlist generation
+- **RESTful API** for coherence-based music recommendations
+
 ## Roadmap
 
-- [ ] Spotify OAuth integration and playlist creation
+- [ ] YouTube Music API integration and playlist creation
 - [ ] Session screen with real-time HR/coherence graphs
 - [ ] Local data storage (SQLDelight) for song-coherence tracking
-- [ ] Coherence playlist generation algorithm
+- [ ] Coherence playlist generation algorithm via Python FastAPI backend
 - [ ] iOS support (KMP structure in place)
+- [ ] Enhanced playlist personalization based on coherence scores
