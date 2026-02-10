@@ -167,11 +167,11 @@ fun SessionScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                     CurrentSongCard(
                         song = currentSong,
-                        statusText = "Settling in... ${settleCountdownSec}s",
+                        statusText = "Calibrating... ${settleCountdownSec}s",
                         isSettling = true
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-                    StayStillNotice()
+                    CalibratingNotice()
                     Spacer(modifier = Modifier.height(16.dp))
                     SessionResultsList(
                         results = sessionResults,
@@ -189,12 +189,18 @@ fun SessionScreen(
                         isSettling = false,
                         coherence = hrvMetrics?.coherenceScore
                     )
+                    Spacer(modifier = Modifier.height(4.dp))
                     if (recordingDurationSec < SessionManager_MIN_RECORDING_SEC) {
-                        Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "${SessionManager_MIN_RECORDING_SEC - recordingDurationSec}s more for a valid reading",
+                            text = "Stay still — ${SessionManager_MIN_RECORDING_SEC - recordingDurationSec}s until valid reading",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    } else {
+                        Text(
+                            text = "Valid reading collected. Continue for more accuracy, or end session.",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
                     Spacer(modifier = Modifier.height(16.dp))
@@ -261,7 +267,7 @@ private fun NotStartedContent(
             )
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = "Search for a song, tap it, and it opens in YouTube Music. We detect playback automatically and track your cardiac coherence.",
+                text = "Search for a song, tap it, and it opens in YouTube Music. We detect playback automatically and track your cardiac coherence.\n\nStay still and listen for at least 60 seconds per song to log a valid reading.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
@@ -368,9 +374,9 @@ private fun WaitingForPlaybackCard(pendingSong: SearchResult?) {
 }
 
 @Composable
-private fun StayStillNotice() {
+private fun CalibratingNotice() {
     Text(
-        text = "Stay still — settling in before recording",
+        text = "Stay still — calibrating before recording",
         style = MaterialTheme.typography.labelSmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = TextAlign.Center,

@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -81,24 +82,36 @@ class SessionViewModel(
     private fun startPlaybackMonitoring() {
         playbackMonitorJob?.cancel()
 
-        // Track the last detected track to know when song changes
-        var lastTrack: DetectedTrack? = null
+        // Snapshot current state so we ignore whatever is already playing.
+        // We only react to changes AFTER the user selects a song via search.
+        val baselineTrack = MusicDetectionService.currentTrack.value
+        var lastTrack: DetectedTrack? = baselineTrack
+        var hasUserSelectedSong = false
 
         playbackMonitorJob = viewModelScope.launch {
-            // Combine track and playback state changes
+            // Watch for user selecting a song (phase moves to WAITING_PLAYBACK)
             launch {
-                MusicDetectionService.currentTrack.collect { track ->
+                sessionManager.phase.collect { phase ->
+                    if (phase == SessionPhase.ACTIVE_WAITING_PLAYBACK) {
+                        hasUserSelectedSong = true
+                    }
+                }
+            }
+            // Monitor track changes — only react after user has selected a song
+            launch {
+                MusicDetectionService.currentTrack.drop(1).collect { track ->
+                    if (!hasUserSelectedSong) return@collect
                     val isPlaying = MusicDetectionService.isPlaying.value
                     val now = System.currentTimeMillis()
 
-                    if (track != null && isPlaying) {
-                        if (lastTrack == null) {
-                            // First track detected — playback started
+                    if (track != null && isPlaying && track != lastTrack) {
+                        if (sessionPhase.value == SessionPhase.ACTIVE_WAITING_PLAYBACK ||
+                            sessionPhase.value == SessionPhase.ACTIVE_NO_SONG
+                        ) {
                             sessionManager.onPlaybackDetected(
                                 track.title, track.artist, now
                             )
-                        } else if (track != lastTrack) {
-                            // Song changed while playing
+                        } else {
                             sessionManager.onSongChanged(
                                 track.title, track.artist, now
                             )
@@ -107,20 +120,24 @@ class SessionViewModel(
                     lastTrack = track
                 }
             }
+            // Monitor play/pause state
             launch {
-                MusicDetectionService.isPlaying.collect { playing ->
+                MusicDetectionService.isPlaying.drop(1).collect { playing ->
+                    if (!hasUserSelectedSong) return@collect
                     val track = MusicDetectionService.currentTrack.value
                     val now = System.currentTimeMillis()
 
-                    if (!playing && lastTrack != null) {
-                        // Playback stopped
+                    if (!playing) {
                         sessionManager.onPlaybackStopped(now)
-                    } else if (playing && track != null && lastTrack == null) {
-                        // Playback resumed/started
-                        sessionManager.onPlaybackDetected(
-                            track.title, track.artist, now
-                        )
-                        lastTrack = track
+                    } else if (playing && track != null && track != baselineTrack) {
+                        if (sessionPhase.value == SessionPhase.ACTIVE_WAITING_PLAYBACK ||
+                            sessionPhase.value == SessionPhase.ACTIVE_NO_SONG
+                        ) {
+                            sessionManager.onPlaybackDetected(
+                                track.title, track.artist, now
+                            )
+                            lastTrack = track
+                        }
                     }
                 }
             }
