@@ -27,13 +27,19 @@ Server starts at `http://localhost:8080`. API docs at `http://localhost:8080/doc
 
 | Variable | Description |
 |----------|-------------|
-| `YTMUSIC_OAUTH_JSON` | YouTube Music OAuth credentials as a JSON string. Falls back to `oauth.json` file if not set. |
+| `YTMUSIC_OAUTH_B64` | YouTube Music OAuth credentials as a base64-encoded string. Falls back to `oauth.json` file if not set. |
 
 ## Deploy to Fly.io
 
 ```bash
 fly launch --no-deploy
-fly secrets set YTMUSIC_OAUTH_JSON="$(cat oauth.json)"
+
+# Set the OAuth secret (base64-encoded to avoid shell quoting issues)
+# PowerShell:
+flyctl secrets set YTMUSIC_OAUTH_B64=$([Convert]::ToBase64String([IO.File]::ReadAllBytes("oauth.json"))) -a hrvxo-music
+# Bash:
+flyctl secrets set YTMUSIC_OAUTH_B64="$(base64 -w0 oauth.json)" -a hrvxo-music
+
 fly deploy
 ```
 

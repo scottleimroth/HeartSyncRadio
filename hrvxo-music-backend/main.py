@@ -1,3 +1,4 @@
+import base64
 import json
 import os
 import tempfile
@@ -17,28 +18,40 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Lazy-init so the app starts even if credentials are missing (health check works)
+_ytmusic: YTMusic | None = None
+
 
 def get_ytmusic() -> YTMusic:
-    """Initialise YTMusic client from env var or local file."""
-    oauth_json_str = os.environ.get("YTMUSIC_OAUTH_JSON")
-    if oauth_json_str:
-        # Write the JSON string to a temp file — ytmusicapi expects a file path
-        tmp = tempfile.NamedTemporaryFile(
-            mode="w", suffix=".json", delete=False
-        )
-        tmp.write(oauth_json_str)
-        tmp.flush()
-        return YTMusic(tmp.name)
+    """Initialise YTMusic client from base64 env var or local file."""
+    global _ytmusic
+    if _ytmusic is not None:
+        return _ytmusic
+
+    oauth_b64 = os.environ.get("YTMUSIC_OAUTH_B64")
+    if oauth_b64:
+        # Decode base64 → JSON string → validate → write to temp file
+        try:
+            oauth_json_str = base64.b64decode(oauth_b64).decode("utf-8")
+            json.loads(oauth_json_str)  # validate it's real JSON
+        except Exception as e:
+            raise RuntimeError(f"YTMUSIC_OAUTH_B64 decode failed: {e}")
+
+        tmp_path = os.path.join(tempfile.gettempdir(), "ytmusic_oauth.json")
+        with open(tmp_path, "w") as f:
+            f.write(oauth_json_str)
+        _ytmusic = YTMusic(tmp_path)
+        return _ytmusic
+
     # Local dev fallback
     if os.path.exists("oauth.json"):
-        return YTMusic("oauth.json")
+        _ytmusic = YTMusic("oauth.json")
+        return _ytmusic
+
     raise RuntimeError(
         "No YouTube Music credentials found. "
-        "Set YTMUSIC_OAUTH_JSON env var or provide oauth.json file."
+        "Set YTMUSIC_OAUTH_B64 env var or provide oauth.json file."
     )
-
-
-ytmusic = get_ytmusic()
 
 
 # --- Request / Response models ---
@@ -79,7 +92,10 @@ def search(req: SearchRequest):
     if not req.query.strip():
         raise HTTPException(status_code=400, detail="Query cannot be empty")
     try:
-        results = ytmusic.search(req.query, filter="songs", limit=10)
+        yt = get_ytmusic()
+        results = yt.search(req.query, filter="songs", limit=10)
+    except RuntimeError as e:
+        raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"YouTube Music API error: {e}")
 
@@ -108,11 +124,14 @@ def create_playlist(req: CreatePlaylistRequest):
             status_code=400, detail="Must provide at least one song ID"
         )
     try:
-        playlist_id = ytmusic.create_playlist(
+        yt = get_ytmusic()
+        playlist_id = yt.create_playlist(
             title=req.title,
             description=req.description,
             video_ids=req.song_ids,
         )
+    except RuntimeError as e:
+        raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"YouTube Music API error: {e}")
 
