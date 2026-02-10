@@ -41,6 +41,12 @@ CREDENTIALS.md
 *.pem
 *.p12
 *.jks
+oauth.json
+
+# Python
+__pycache__/
+*.pyc
+.venv/
 
 # OS files
 .DS_Store
