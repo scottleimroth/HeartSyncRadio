@@ -1,5 +1,7 @@
 package com.heartsyncradio
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -121,7 +123,11 @@ class MainActivity : ComponentActivity() {
                 onStartSession = sessionViewModel::startSession,
                 onEndSession = sessionViewModel::endSession,
                 onSearchSongs = sessionViewModel::searchSongs,
-                onTagSong = sessionViewModel::tagSong,
+                onTagSong = { result ->
+                    sessionViewModel.tagSong(result)
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://music.youtube.com/watch?v=${result.videoId}"))
+                    startActivity(intent)
+                },
                 onCreatePlaylist = sessionViewModel::createPlaylist,
                 onResetSession = sessionViewModel::resetSession,
                 onClearSearchError = sessionViewModel::clearSearchError
