@@ -262,7 +262,7 @@ private fun NotStartedContent(
         ) {
             Text(
                 text = "Coherence Playlist Session",
-                style = MaterialTheme.typography.headlineSmall,
+                style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.height(16.dp))
@@ -539,105 +539,131 @@ private fun EndedContent(
         )
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Summary card
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer
-            )
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Column {
-                        Text("Songs Recorded", style = MaterialTheme.typography.labelSmall)
-                        Text(
-                            "${validResults.size}",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold
-                        )
+        if (validResults.isEmpty() && sessionResults.isEmpty()) {
+            // No songs recorded at all — early end
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer
+                )
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "Session ended early",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "No data recorded. Listen to a song for at least 60 seconds to log a valid coherence reading.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.weight(1f))
+        } else {
+            // Summary card
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                )
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column {
+                            Text("Songs Recorded", style = MaterialTheme.typography.labelSmall)
+                            Text(
+                                "${validResults.size}",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text("Avg Coherence", style = MaterialTheme.typography.labelSmall)
+                            Text(
+                                "${(avgCoherence * 100).toInt()}%",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text("Avg Coherence", style = MaterialTheme.typography.labelSmall)
+                    if (bestSong != null) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text("Best Song", style = MaterialTheme.typography.labelSmall)
                         Text(
-                            "${(avgCoherence * 100).toInt()}%",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold
+                            "${bestSong.searchResult.title} — ${(bestSong.avgCoherence * 100).toInt()}%",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold
                         )
                     }
                 }
-                if (bestSong != null) {
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Invalid songs notice
+            val invalidCount = sessionResults.count { !it.isValid }
+            if (invalidCount > 0) {
+                Text(
+                    text = "$invalidCount song(s) had less than 60s of data — not counted",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            // Song results list
+            LazyColumn(modifier = Modifier.weight(1f)) {
+                items(sessionResults) { result ->
+                    SongResultCard(result = result)
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text("Best Song", style = MaterialTheme.typography.labelSmall)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Playlist creation
+            if (playlistCreated != null) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                    )
+                ) {
                     Text(
-                        "${bestSong.searchResult.title} — ${(bestSong.avgCoherence * 100).toInt()}%",
+                        text = "Playlist created on YouTube Music!",
+                        modifier = Modifier.padding(16.dp),
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold
                     )
                 }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Invalid songs notice
-        val invalidCount = sessionResults.count { !it.isValid }
-        if (invalidCount > 0) {
-            Text(
-                text = "$invalidCount song(s) had less than 60s of data — not counted",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-        }
-
-        // Song results list
-        LazyColumn(modifier = Modifier.weight(1f)) {
-            items(sessionResults) { result ->
-                SongResultCard(result = result)
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Playlist creation
-        if (playlistCreated != null) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.tertiaryContainer
-                )
-            ) {
-                Text(
-                    text = "Playlist created on YouTube Music!",
-                    modifier = Modifier.padding(16.dp),
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
-        } else if (totalSongCount >= 3) {
-            Button(
-                onClick = onCreatePlaylist,
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !isCreatingPlaylist
-            ) {
-                if (isCreatingPlaylist) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.padding(end = 8.dp),
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
+            } else if (totalSongCount >= 3) {
+                Button(
+                    onClick = onCreatePlaylist,
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !isCreatingPlaylist
+                ) {
+                    if (isCreatingPlaylist) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.padding(end = 8.dp),
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
+                    Text("Create Coherence Playlist")
                 }
-                Text("Create Coherence Playlist")
+            } else {
+                Text(
+                    text = "${totalSongCount}/3 songs — listen to ${3 - totalSongCount} more for your first playlist",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
-        } else {
-            Text(
-                text = "${totalSongCount}/3 songs — listen to ${3 - totalSongCount} more for your first playlist",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
         }
 
         Spacer(modifier = Modifier.height(8.dp))

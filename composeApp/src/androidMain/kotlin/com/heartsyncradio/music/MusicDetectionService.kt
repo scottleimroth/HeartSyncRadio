@@ -28,12 +28,18 @@ class MusicDetectionService : NotificationListenerService() {
         private val _isPlaying = MutableStateFlow(false)
         val isPlaying: StateFlow<Boolean> = _isPlaying.asStateFlow()
 
+        private var controllerRef: MediaController? = null
+
         fun isEnabled(context: Context): Boolean {
             val flat = Settings.Secure.getString(
                 context.contentResolver,
                 "enabled_notification_listeners"
             )
             return flat?.contains(context.packageName) == true
+        }
+
+        fun pausePlayback() {
+            controllerRef?.transportControls?.pause()
         }
     }
 
@@ -65,6 +71,7 @@ class MusicDetectionService : NotificationListenerService() {
     override fun onListenerDisconnected() {
         ytMusicController?.unregisterCallback(mediaCallback)
         ytMusicController = null
+        controllerRef = null
         _currentTrack.value = null
         _isPlaying.value = false
         super.onListenerDisconnected()
@@ -73,10 +80,10 @@ class MusicDetectionService : NotificationListenerService() {
     private fun connectToYouTubeMusic(controllers: List<MediaController>?) {
         ytMusicController?.unregisterCallback(mediaCallback)
         ytMusicController = controllers?.find { it.packageName == YT_MUSIC_PACKAGE }
+        controllerRef = ytMusicController
 
         ytMusicController?.let { controller ->
             controller.registerCallback(mediaCallback)
-            // Read current state
             controller.metadata?.let { readMetadata(it) }
             _isPlaying.value =
                 controller.playbackState?.state == PlaybackState.STATE_PLAYING

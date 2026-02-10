@@ -169,6 +169,7 @@ class SessionViewModel(
         sessionManager.endSession(now)
         metricsCollectionJob?.cancel()
         playbackMonitorJob?.cancel()
+        MusicDetectionService.pausePlayback()
 
         // Save valid results to database
         viewModelScope.launch {

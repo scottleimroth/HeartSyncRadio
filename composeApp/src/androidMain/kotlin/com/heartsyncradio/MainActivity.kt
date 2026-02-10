@@ -3,6 +3,8 @@ package com.heartsyncradio
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -133,8 +135,16 @@ class MainActivity : ComponentActivity() {
                 onSearchSongs = sessionViewModel::searchSongs,
                 onTagSong = { result ->
                     sessionViewModel.selectSong(result)
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://music.youtube.com/watch?v=${result.videoId}"))
-                    startActivity(intent)
+                    // Open song in YouTube Music
+                    val ytmIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://music.youtube.com/watch?v=${result.videoId}"))
+                    startActivity(ytmIntent)
+                    // Return to HrvXo after YTM starts the song
+                    Handler(Looper.getMainLooper()).postDelayed({
+                        val bringBack = Intent(this, MainActivity::class.java).apply {
+                            flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                        }
+                        startActivity(bringBack)
+                    }, 1500)
                 },
                 onCreatePlaylist = sessionViewModel::createPlaylist,
                 onResetSession = sessionViewModel::resetSession,
