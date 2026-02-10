@@ -4,6 +4,14 @@
 
 A biofeedback-driven music app that uses your Polar H10 heart rate monitor to generate YouTube Music playlists based on cardiac coherence.
 
+---
+
+## Available Platforms
+
+| Platform | How to Get It |
+|----------|---------------|
+| Android | [Download APK](https://github.com/scottleimroth/hrvxo/releases/latest/download/HrvXo.apk) — requires Polar H10 chest strap + Bluetooth |
+
 ## Overview
 
 HrvXo connects to a Polar H10 chest strap via Bluetooth LE, processes real-time heart rate variability (HRV) data, and calculates a coherence score using the HeartMath algorithm. The goal is to identify which songs produce the highest physiological coherence and build personalised playlists from that data.
