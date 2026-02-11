@@ -1,11 +1,11 @@
 package com.heartsyncradio
 
-import android.app.ActivityManager
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -14,17 +14,15 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.core.app.NotificationCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.lifecycleScope
 import com.heartsyncradio.di.AppModule
 import com.heartsyncradio.di.DeviceMode
 import com.heartsyncradio.music.MusicDetectionService
 import com.heartsyncradio.permission.BlePermissionHandler
 import com.heartsyncradio.viewmodel.HomeViewModel
 import com.heartsyncradio.viewmodel.SessionViewModel
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
@@ -32,8 +30,11 @@ class MainActivity : ComponentActivity() {
     private lateinit var sessionViewModel: SessionViewModel
     private var currentScreen by mutableStateOf(AppScreen.HOME)
     private var notificationListenerEnabled by mutableStateOf(false)
-    private var pendingReturnFromYtm = false
-    private var savedTaskId = -1
+
+    companion object {
+        private const val RETURN_CHANNEL_ID = "hrvxo_return"
+        private const val RETURN_NOTIFICATION_ID = 42
+    }
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -45,6 +46,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        createReturnNotificationChannel()
 
         viewModel = ViewModelProvider(
             this,
@@ -141,8 +143,6 @@ class MainActivity : ComponentActivity() {
                 onSearchSongs = sessionViewModel::searchSongs,
                 onTagSong = { result ->
                     sessionViewModel.selectSong(result)
-                    pendingReturnFromYtm = true
-                    savedTaskId = taskId
                     // Target YTM directly to avoid Chrome resolver on first launch
                     val ytmIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://music.youtube.com/watch?v=${result.videoId}")).apply {
                         setPackage("com.google.android.apps.youtube.music")
@@ -152,13 +152,7 @@ class MainActivity : ComponentActivity() {
                     } catch (_: Exception) {
                         startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://music.youtube.com/watch?v=${result.videoId}")))
                     }
-                    // Staggered bring-back attempts — keeps retrying until onResume clears the flag
-                    for (delayMs in listOf(2000L, 4000L, 6000L, 9000L)) {
-                        lifecycleScope.launch {
-                            delay(delayMs)
-                            tryBringBack()
-                        }
-                    }
+                    showReturnNotification()
                 },
                 onCreatePlaylist = sessionViewModel::createPlaylist,
                 onResetSession = sessionViewModel::resetSession,
@@ -172,35 +166,45 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        pendingReturnFromYtm = false // We're back in foreground — stop retrying
+        cancelReturnNotification()
         notificationListenerEnabled = MusicDetectionService.isEnabled(this)
     }
 
-    override fun onStop() {
-        super.onStop()
-        // Earliest attempt: YTM just took the foreground
-        if (pendingReturnFromYtm) {
-            Handler(Looper.getMainLooper()).postDelayed({ tryBringBack() }, 800)
+    private fun createReturnNotificationChannel() {
+        val channel = NotificationChannel(
+            RETURN_CHANNEL_ID,
+            "Session Return",
+            NotificationManager.IMPORTANCE_LOW
+        ).apply {
+            description = "Tap to return to HrvXo during a music session"
         }
+        val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        nm.createNotificationChannel(channel)
     }
 
-    private fun tryBringBack() {
-        if (!pendingReturnFromYtm) return
-        // Method 1: moveTaskToFront — direct system API, more reliable from background
-        try {
-            val am = getSystemService(ACTIVITY_SERVICE) as ActivityManager
-            @Suppress("DEPRECATION")
-            am.moveTaskToFront(savedTaskId, ActivityManager.MOVE_TASK_WITH_HOME)
-        } catch (_: Exception) {}
-        // Method 2: startActivity with NEW_TASK — fallback
-        try {
-            val bringBack = Intent(this, MainActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or
-                        Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or
-                        Intent.FLAG_ACTIVITY_SINGLE_TOP
-            }
-            startActivity(bringBack)
-        } catch (_: Exception) {}
+    private fun showReturnNotification() {
+        val returnIntent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            this, 0, returnIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val notification = NotificationCompat.Builder(this, RETURN_CHANNEL_ID)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setContentTitle("HrvXo session active")
+            .setContentText("Tap to return to HrvXo")
+            .setOngoing(true)
+            .setContentIntent(pendingIntent)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .build()
+        val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        nm.notify(RETURN_NOTIFICATION_ID, notification)
+    }
+
+    private fun cancelReturnNotification() {
+        val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        nm.cancel(RETURN_NOTIFICATION_ID)
     }
 
     override fun onDestroy() {

@@ -18,8 +18,8 @@
     <!-- Internet for YouTube Music API -->
     <uses-permission android:name="android.permission.INTERNET" />
 
-    <!-- Bring HrvXo back to foreground after opening YouTube Music -->
-    <uses-permission android:name="android.permission.REORDER_TASKS" />
+    <!-- Return-to-app notification when YouTube Music is open (Android 13+) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:allowBackup="true"
