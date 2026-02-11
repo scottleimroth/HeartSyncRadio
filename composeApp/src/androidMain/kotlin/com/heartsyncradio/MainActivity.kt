@@ -28,6 +28,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var sessionViewModel: SessionViewModel
     private var currentScreen by mutableStateOf(AppScreen.HOME)
     private var notificationListenerEnabled by mutableStateOf(false)
+    private var pendingReturnFromYtm = false
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -135,16 +136,10 @@ class MainActivity : ComponentActivity() {
                 onSearchSongs = sessionViewModel::searchSongs,
                 onTagSong = { result ->
                     sessionViewModel.selectSong(result)
-                    // Open song in YouTube Music
+                    // Open song in YouTube Music — onStop brings us back once YTM is in foreground
+                    pendingReturnFromYtm = true
                     val ytmIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://music.youtube.com/watch?v=${result.videoId}"))
                     startActivity(ytmIntent)
-                    // Return to HrvXo after YTM starts the song
-                    Handler(Looper.getMainLooper()).postDelayed({
-                        val bringBack = Intent(this, MainActivity::class.java).apply {
-                            flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
-                        }
-                        startActivity(bringBack)
-                    }, 1500)
                 },
                 onCreatePlaylist = sessionViewModel::createPlaylist,
                 onResetSession = sessionViewModel::resetSession,
@@ -160,6 +155,20 @@ class MainActivity : ComponentActivity() {
         super.onResume()
         // Re-check after user returns from settings
         notificationListenerEnabled = MusicDetectionService.isEnabled(this)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        // YTM has taken the foreground — bring HrvXo back after a short delay
+        if (pendingReturnFromYtm) {
+            pendingReturnFromYtm = false
+            Handler(Looper.getMainLooper()).postDelayed({
+                val bringBack = Intent(this, MainActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                }
+                startActivity(bringBack)
+            }, 800)
+        }
     }
 
     override fun onDestroy() {
