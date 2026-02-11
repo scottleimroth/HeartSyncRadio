@@ -15,12 +15,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
 import com.heartsyncradio.di.AppModule
 import com.heartsyncradio.di.DeviceMode
 import com.heartsyncradio.music.MusicDetectionService
 import com.heartsyncradio.permission.BlePermissionHandler
 import com.heartsyncradio.viewmodel.HomeViewModel
 import com.heartsyncradio.viewmodel.SessionViewModel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
@@ -136,10 +139,23 @@ class MainActivity : ComponentActivity() {
                 onSearchSongs = sessionViewModel::searchSongs,
                 onTagSong = { result ->
                     sessionViewModel.selectSong(result)
-                    // Open song in YouTube Music — onStop brings us back once YTM is in foreground
                     pendingReturnFromYtm = true
-                    val ytmIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://music.youtube.com/watch?v=${result.videoId}"))
-                    startActivity(ytmIntent)
+                    // Target YTM directly — avoids Chrome resolver on first launch
+                    val ytmIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://music.youtube.com/watch?v=${result.videoId}")).apply {
+                        setPackage("com.google.android.apps.youtube.music")
+                    }
+                    try {
+                        startActivity(ytmIntent)
+                    } catch (_: Exception) {
+                        // YTM not installed — fall back to browser
+                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://music.youtube.com/watch?v=${result.videoId}")))
+                    }
+                    // Fallback: if onStop bring-back fails (background launch restriction),
+                    // coroutine retries after YTM has had time to cold-start
+                    lifecycleScope.launch {
+                        delay(4000)
+                        bringBackIfPending()
+                    }
                 },
                 onCreatePlaylist = sessionViewModel::createPlaylist,
                 onResetSession = sessionViewModel::resetSession,
@@ -159,16 +175,21 @@ class MainActivity : ComponentActivity() {
 
     override fun onStop() {
         super.onStop()
-        // YTM has taken the foreground — bring HrvXo back after a short delay
+        // Primary: YTM has taken the foreground — bring HrvXo back after a short delay
         if (pendingReturnFromYtm) {
-            pendingReturnFromYtm = false
             Handler(Looper.getMainLooper()).postDelayed({
-                val bringBack = Intent(this, MainActivity::class.java).apply {
-                    flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
-                }
-                startActivity(bringBack)
+                bringBackIfPending()
             }, 800)
         }
+    }
+
+    private fun bringBackIfPending() {
+        if (!pendingReturnFromYtm) return
+        pendingReturnFromYtm = false
+        val bringBack = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP
+        }
+        startActivity(bringBack)
     }
 
     override fun onDestroy() {
