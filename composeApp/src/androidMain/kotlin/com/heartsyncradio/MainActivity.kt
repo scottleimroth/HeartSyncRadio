@@ -1,11 +1,13 @@
 package com.heartsyncradio
 
+import android.app.AlarmManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.os.SystemClock
 import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -30,10 +32,12 @@ class MainActivity : ComponentActivity() {
     private lateinit var sessionViewModel: SessionViewModel
     private var currentScreen by mutableStateOf(AppScreen.HOME)
     private var notificationListenerEnabled by mutableStateOf(false)
+    private var returnPendingIntent: PendingIntent? = null
 
     companion object {
         private const val RETURN_CHANNEL_ID = "hrvxo_return"
         private const val RETURN_NOTIFICATION_ID = 42
+        private const val AUTO_RETURN_DELAY_MS = 1500L
     }
 
     private val permissionLauncher = registerForActivityResult(
@@ -153,6 +157,7 @@ class MainActivity : ComponentActivity() {
                         startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://music.youtube.com/watch?v=${result.videoId}")))
                     }
                     showReturnNotification()
+                    scheduleAutoReturn()
                 },
                 onCreatePlaylist = sessionViewModel::createPlaylist,
                 onResetSession = sessionViewModel::resetSession,
@@ -166,6 +171,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        cancelAutoReturn()
         cancelReturnNotification()
         notificationListenerEnabled = MusicDetectionService.isEnabled(this)
     }
@@ -205,6 +211,32 @@ class MainActivity : ComponentActivity() {
     private fun cancelReturnNotification() {
         val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         nm.cancel(RETURN_NOTIFICATION_ID)
+    }
+
+    /** Use AlarmManager to fire a system-sent PendingIntent that brings HrvXo back.
+     *  System-sent PendingIntents are exempt from background activity start restrictions. */
+    private fun scheduleAutoReturn() {
+        val returnIntent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+        }
+        returnPendingIntent = PendingIntent.getActivity(
+            this, 1, returnIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val am = getSystemService(ALARM_SERVICE) as AlarmManager
+        am.set(
+            AlarmManager.ELAPSED_REALTIME,
+            SystemClock.elapsedRealtime() + AUTO_RETURN_DELAY_MS,
+            returnPendingIntent!!
+        )
+    }
+
+    private fun cancelAutoReturn() {
+        returnPendingIntent?.let {
+            val am = getSystemService(ALARM_SERVICE) as AlarmManager
+            am.cancel(it)
+            returnPendingIntent = null
+        }
     }
 
     override fun onDestroy() {
