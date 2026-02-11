@@ -66,6 +66,7 @@ fun SessionScreen(
     totalSongCount: Long,
     playlistCreated: String?,
     isCreatingPlaylist: Boolean,
+    isMoving: Boolean,
     notificationListenerEnabled: Boolean,
     onStartSession: () -> Unit,
     onEndSession: () -> Unit,
@@ -191,6 +192,17 @@ fun SessionScreen(
                         isSettling = false,
                         coherence = hrvMetrics?.coherenceScore
                     )
+                    if (isMoving) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Movement detected. Please remain still during data acquisition.",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.error,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                     Spacer(modifier = Modifier.height(4.dp))
                     if (recordingDurationSec < SessionManager_MIN_RECORDING_SEC) {
                         Text(

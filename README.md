@@ -1,6 +1,6 @@
 # HrvXo
 
-[![Download APK](https://img.shields.io/badge/Download-APK-green?style=for-the-badge)](https://github.com/scottleimroth/hrvxo/releases/latest/download/HrvXo-v1.3.1.apk)
+[![Download APK](https://img.shields.io/badge/Download-APK-green?style=for-the-badge)](https://github.com/scottleimroth/hrvxo/releases/latest/download/HrvXo-v1.3.2.apk)
 
 A biofeedback-driven music app that uses your Polar H10 heart rate monitor to generate YouTube Music playlists based on cardiac coherence.
 
@@ -10,7 +10,7 @@ A biofeedback-driven music app that uses your Polar H10 heart rate monitor to ge
 
 | Platform | How to Get It |
 |----------|---------------|
-| Android | [Download APK](https://github.com/scottleimroth/hrvxo/releases/latest/download/HrvXo-v1.3.1.apk) — requires Polar H10 chest strap + Bluetooth |
+| Android | [Download APK](https://github.com/scottleimroth/hrvxo/releases/latest/download/HrvXo-v1.3.2.apk) — requires Polar H10 chest strap + Bluetooth |
 
 ## Overview
 

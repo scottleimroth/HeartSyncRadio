@@ -51,6 +51,8 @@ class SessionViewModel(
     private val _isCreatingPlaylist = MutableStateFlow(false)
     val isCreatingPlaylist: StateFlow<Boolean> = _isCreatingPlaylist.asStateFlow()
 
+    val isMoving: StateFlow<Boolean> = movementDetector.isMoving
+
     val totalSongCount = repository.songCount()
         .stateIn(viewModelScope, SharingStarted.Eagerly, 0L)
 

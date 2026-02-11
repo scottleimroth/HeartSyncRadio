@@ -93,6 +93,7 @@ class MainActivity : ComponentActivity() {
             val totalSongCount by sessionViewModel.totalSongCount.collectAsStateWithLifecycle()
             val playlistCreated by sessionViewModel.playlistCreated.collectAsStateWithLifecycle()
             val isCreatingPlaylist by sessionViewModel.isCreatingPlaylist.collectAsStateWithLifecycle()
+            val isMoving by sessionViewModel.isMoving.collectAsStateWithLifecycle()
 
             App(
                 currentScreen = currentScreen,
@@ -141,6 +142,7 @@ class MainActivity : ComponentActivity() {
                 totalSongCount = totalSongCount,
                 playlistCreated = playlistCreated,
                 isCreatingPlaylist = isCreatingPlaylist,
+                isMoving = isMoving,
                 notificationListenerEnabled = notificationListenerEnabled,
                 onStartSession = sessionViewModel::startSession,
                 onEndSession = sessionViewModel::endSession,
