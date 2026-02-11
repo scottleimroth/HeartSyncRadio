@@ -1,5 +1,6 @@
 package com.heartsyncradio
 
+import android.app.ActivityManager
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -32,6 +33,7 @@ class MainActivity : ComponentActivity() {
     private var currentScreen by mutableStateOf(AppScreen.HOME)
     private var notificationListenerEnabled by mutableStateOf(false)
     private var pendingReturnFromYtm = false
+    private var savedTaskId = -1
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -140,21 +142,22 @@ class MainActivity : ComponentActivity() {
                 onTagSong = { result ->
                     sessionViewModel.selectSong(result)
                     pendingReturnFromYtm = true
-                    // Target YTM directly — avoids Chrome resolver on first launch
+                    savedTaskId = taskId
+                    // Target YTM directly to avoid Chrome resolver on first launch
                     val ytmIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://music.youtube.com/watch?v=${result.videoId}")).apply {
                         setPackage("com.google.android.apps.youtube.music")
                     }
                     try {
                         startActivity(ytmIntent)
                     } catch (_: Exception) {
-                        // YTM not installed — fall back to browser
                         startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://music.youtube.com/watch?v=${result.videoId}")))
                     }
-                    // Fallback: if onStop bring-back fails (background launch restriction),
-                    // coroutine retries after YTM has had time to cold-start
-                    lifecycleScope.launch {
-                        delay(4000)
-                        bringBackIfPending()
+                    // Staggered bring-back attempts — keeps retrying until onResume clears the flag
+                    for (delayMs in listOf(2000L, 4000L, 6000L, 9000L)) {
+                        lifecycleScope.launch {
+                            delay(delayMs)
+                            tryBringBack()
+                        }
                     }
                 },
                 onCreatePlaylist = sessionViewModel::createPlaylist,
@@ -169,27 +172,35 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        // Re-check after user returns from settings
+        pendingReturnFromYtm = false // We're back in foreground — stop retrying
         notificationListenerEnabled = MusicDetectionService.isEnabled(this)
     }
 
     override fun onStop() {
         super.onStop()
-        // Primary: YTM has taken the foreground — bring HrvXo back after a short delay
+        // Earliest attempt: YTM just took the foreground
         if (pendingReturnFromYtm) {
-            Handler(Looper.getMainLooper()).postDelayed({
-                bringBackIfPending()
-            }, 800)
+            Handler(Looper.getMainLooper()).postDelayed({ tryBringBack() }, 800)
         }
     }
 
-    private fun bringBackIfPending() {
+    private fun tryBringBack() {
         if (!pendingReturnFromYtm) return
-        pendingReturnFromYtm = false
-        val bringBack = Intent(this, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP
-        }
-        startActivity(bringBack)
+        // Method 1: moveTaskToFront — direct system API, more reliable from background
+        try {
+            val am = getSystemService(ACTIVITY_SERVICE) as ActivityManager
+            @Suppress("DEPRECATION")
+            am.moveTaskToFront(savedTaskId, ActivityManager.MOVE_TASK_WITH_HOME)
+        } catch (_: Exception) {}
+        // Method 2: startActivity with NEW_TASK — fallback
+        try {
+            val bringBack = Intent(this, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                        Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or
+                        Intent.FLAG_ACTIVITY_SINGLE_TOP
+            }
+            startActivity(bringBack)
+        } catch (_: Exception) {}
     }
 
     override fun onDestroy() {
