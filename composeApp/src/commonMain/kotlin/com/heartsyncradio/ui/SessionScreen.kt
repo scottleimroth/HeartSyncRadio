@@ -68,6 +68,7 @@ fun SessionScreen(
     isCreatingPlaylist: Boolean,
     isMoving: Boolean,
     notificationListenerEnabled: Boolean,
+    overlayPermissionGranted: Boolean,
     onStartSession: () -> Unit,
     onEndSession: () -> Unit,
     onSearchSongs: (String) -> Unit,
@@ -76,6 +77,7 @@ fun SessionScreen(
     onResetSession: () -> Unit,
     onClearSearchError: () -> Unit,
     onRequestNotificationListener: () -> Unit,
+    onRequestOverlayPermission: () -> Unit,
     onBack: () -> Unit
 ) {
     var showSearchSheet by remember { mutableStateOf(false) }
@@ -109,8 +111,10 @@ fun SessionScreen(
                     NotStartedContent(
                         hrvMetrics = hrvMetrics,
                         notificationListenerEnabled = notificationListenerEnabled,
+                        overlayPermissionGranted = overlayPermissionGranted,
                         onStartSession = onStartSession,
-                        onRequestNotificationListener = onRequestNotificationListener
+                        onRequestNotificationListener = onRequestNotificationListener,
+                        onRequestOverlayPermission = onRequestOverlayPermission
                     )
                 }
 
@@ -263,8 +267,10 @@ private const val SessionManager_MIN_RECORDING_SEC = 60
 private fun NotStartedContent(
     hrvMetrics: HrvMetrics?,
     notificationListenerEnabled: Boolean,
+    overlayPermissionGranted: Boolean,
     onStartSession: () -> Unit,
-    onRequestNotificationListener: () -> Unit
+    onRequestNotificationListener: () -> Unit,
+    onRequestOverlayPermission: () -> Unit
 ) {
     Box(
         modifier = Modifier.fillMaxSize(),
@@ -341,6 +347,38 @@ private fun NotStartedContent(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             } else {
+                if (!overlayPermissionGranted) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = "Auto-return permission (optional)",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Allow \"Display over other apps\" so HrvXo automatically returns after opening YouTube Music.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                textAlign = TextAlign.Center
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Button(onClick = onRequestOverlayPermission) {
+                                Text("Grant Permission")
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
                 Text(
                     text = "Requires YouTube Music app installed",
                     style = MaterialTheme.typography.labelSmall,

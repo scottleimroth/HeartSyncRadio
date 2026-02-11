@@ -52,6 +52,7 @@ fun App(
     isCreatingPlaylist: Boolean = false,
     isMoving: Boolean = false,
     notificationListenerEnabled: Boolean = false,
+    overlayPermissionGranted: Boolean = false,
     onStartSession: () -> Unit = {},
     onEndSession: () -> Unit = {},
     onSearchSongs: (String) -> Unit = {},
@@ -59,7 +60,8 @@ fun App(
     onCreatePlaylist: () -> Unit = {},
     onResetSession: () -> Unit = {},
     onClearSearchError: () -> Unit = {},
-    onRequestNotificationListener: () -> Unit = {}
+    onRequestNotificationListener: () -> Unit = {},
+    onRequestOverlayPermission: () -> Unit = {}
 ) {
     MaterialTheme {
         when (currentScreen) {
@@ -99,6 +101,7 @@ fun App(
                 isCreatingPlaylist = isCreatingPlaylist,
                 isMoving = isMoving,
                 notificationListenerEnabled = notificationListenerEnabled,
+                overlayPermissionGranted = overlayPermissionGranted,
                 onStartSession = onStartSession,
                 onEndSession = onEndSession,
                 onSearchSongs = onSearchSongs,
@@ -107,6 +110,7 @@ fun App(
                 onResetSession = onResetSession,
                 onClearSearchError = onClearSearchError,
                 onRequestNotificationListener = onRequestNotificationListener,
+                onRequestOverlayPermission = onRequestOverlayPermission,
                 onBack = {
                     onResetSession()
                     onNavigate(AppScreen.HOME)

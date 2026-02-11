@@ -2,20 +2,21 @@
 
 ## Last Session
 
-- **Date:** 2026-02-11
-- **Summary:** Added movement detection, wired accelerometer into session pipeline, renamed app to HrvXo, fixed UI text alignment
+- **Date:** 2026-02-12
+- **Summary:** Fixed session screen layout, versioned APK filenames, replaced broken YTM auto-return with notification + AlarmManager, added live movement warning
 - **Key changes:**
-  - Created MovementDetector class (accelerometer-based, rolling average, 0.5 m/s² threshold)
-  - Added movementDetected flag to TaggedSong and SongSessionResult
-  - SessionManager.reportMovement() + HR anomaly detection (>30 BPM spike)
-  - Wired MovementDetector into SessionViewModel (start/stop with session lifecycle)
-  - AppModule provides MovementDetector singleton to SessionViewModel
-  - Movement badge UI on SongResultCard (red "Movement" chip when detected)
-  - Fixed "Coherence Playlist Session" heading — titleMedium, centred, fits single line
-  - Renamed HeartSync Radio to HrvXo everywhere (strings, manifest, themes, HomeScreen, settings.gradle, docs)
-  - Version bump to v1.2.0 (versionCode 3)
-- **Stopped at:** All changes complete. v1.2.0 built and released.
-- **Blockers:** None
+  - Deleted old HeartSyncRadio logo.png, updated CREDENTIALS.md references
+  - APK filename now includes version (HrvXo-v1.3.2.apk)
+  - Made NotStartedContent scrollable; Start Session button hidden until notification access granted
+  - Replaced broken moveTaskToFront/staggered retry auto-return with:
+    - Persistent "Tap to return to HrvXo" notification (standard Android pattern)
+    - AlarmManager PendingIntent auto-return (system-sent, exempt from background activity restrictions)
+  - Added live red "Movement detected. Please remain still during data acquisition." warning during recording
+  - Wired MovementDetector.isMoving StateFlow through ViewModel → Activity → App → SessionScreen
+  - Removed REORDER_TASKS permission, added POST_NOTIFICATIONS
+  - Version bump to v1.3.2 (versionCode 6)
+- **Stopped at:** v1.3.2 released. All priority TODO items complete.
+- **Blockers:** YTM auto-return may not work on Android 14+ (AlarmManager PendingIntent exemption removed); notification fallback covers this
 
 ---
 
@@ -48,7 +49,7 @@
 - v1.1.0 released on GitHub with signed APK
 
 ### In Progress
-- On-device testing of latest UX fixes (v1.1.0)
+- None — all priority items complete
 
 ### Known Bugs
 - YTM ads play before songs — cannot be controlled externally (YTM Premium only)
@@ -89,11 +90,12 @@
     - [x] Progress indicator: "3/3 songs — ready for playlist" (3 song minimum for MVP)
     - [x] "Create Coherence Playlist" button: takes top songs from leaderboard, creates YouTube Music playlist
     - [x] Primary generation always from user's actual coherence leaderboard
-6. [ ] **Movement Detection:**
-    - [ ] Phone accelerometer monitoring via Android SensorManager (TYPE_LINEAR_ACCELERATION)
-    - [ ] Rolling movement score: flag when acceleration exceeds resting threshold
-    - [ ] HR anomaly detection: flag sudden HR spikes (>30 BPM above rolling average) not explained by music change
-    - [ ] Per-song movement badge: "Movement detected — score may be less accurate"
+6. [x] **Movement Detection:**
+    - [x] Phone accelerometer monitoring via Android SensorManager (TYPE_LINEAR_ACCELERATION)
+    - [x] Rolling movement score: flag when acceleration exceeds resting threshold
+    - [x] HR anomaly detection: flag sudden HR spikes (>30 BPM above rolling average) not explained by music change
+    - [x] Per-song movement badge: "Movement detected — score may be less accurate"
+    - [x] Live red warning on recording screen when movement detected
 
 ---
 

@@ -1,13 +1,13 @@
 package com.heartsyncradio
 
-import android.app.AlarmManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.os.SystemClock
+import android.os.Handler
+import android.os.Looper
 import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -32,7 +32,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var sessionViewModel: SessionViewModel
     private var currentScreen by mutableStateOf(AppScreen.HOME)
     private var notificationListenerEnabled by mutableStateOf(false)
-    private var returnPendingIntent: PendingIntent? = null
+    private var overlayPermissionGranted by mutableStateOf(false)
 
     companion object {
         private const val RETURN_CHANNEL_ID = "hrvxo_return"
@@ -67,6 +67,7 @@ class MainActivity : ComponentActivity() {
         }
 
         notificationListenerEnabled = MusicDetectionService.isEnabled(this)
+        overlayPermissionGranted = Settings.canDrawOverlays(this)
 
         setContent {
             // Home state
@@ -144,6 +145,7 @@ class MainActivity : ComponentActivity() {
                 isCreatingPlaylist = isCreatingPlaylist,
                 isMoving = isMoving,
                 notificationListenerEnabled = notificationListenerEnabled,
+                overlayPermissionGranted = overlayPermissionGranted,
                 onStartSession = sessionViewModel::startSession,
                 onEndSession = sessionViewModel::endSession,
                 onSearchSongs = sessionViewModel::searchSongs,
@@ -159,13 +161,27 @@ class MainActivity : ComponentActivity() {
                         startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://music.youtube.com/watch?v=${result.videoId}")))
                     }
                     showReturnNotification()
-                    scheduleAutoReturn()
+                    if (Settings.canDrawOverlays(this)) {
+                        // SYSTEM_ALERT_WINDOW exempts us from background activity restrictions
+                        Handler(Looper.getMainLooper()).postDelayed({
+                            val returnIntent = Intent(this, MainActivity::class.java).apply {
+                                flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or
+                                        Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                            }
+                            startActivity(returnIntent)
+                        }, AUTO_RETURN_DELAY_MS)
+                    }
                 },
                 onCreatePlaylist = sessionViewModel::createPlaylist,
                 onResetSession = sessionViewModel::resetSession,
                 onClearSearchError = sessionViewModel::clearSearchError,
                 onRequestNotificationListener = {
                     startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                },
+                onRequestOverlayPermission = {
+                    startActivity(
+                        Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
+                    )
                 }
             )
         }
@@ -173,9 +189,9 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        cancelAutoReturn()
         cancelReturnNotification()
         notificationListenerEnabled = MusicDetectionService.isEnabled(this)
+        overlayPermissionGranted = Settings.canDrawOverlays(this)
     }
 
     private fun createReturnNotificationChannel() {
@@ -213,32 +229,6 @@ class MainActivity : ComponentActivity() {
     private fun cancelReturnNotification() {
         val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         nm.cancel(RETURN_NOTIFICATION_ID)
-    }
-
-    /** Use AlarmManager to fire a system-sent PendingIntent that brings HrvXo back.
-     *  System-sent PendingIntents are exempt from background activity start restrictions. */
-    private fun scheduleAutoReturn() {
-        val returnIntent = Intent(this, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
-        }
-        returnPendingIntent = PendingIntent.getActivity(
-            this, 1, returnIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-        val am = getSystemService(ALARM_SERVICE) as AlarmManager
-        am.set(
-            AlarmManager.ELAPSED_REALTIME,
-            SystemClock.elapsedRealtime() + AUTO_RETURN_DELAY_MS,
-            returnPendingIntent!!
-        )
-    }
-
-    private fun cancelAutoReturn() {
-        returnPendingIntent?.let {
-            val am = getSystemService(ALARM_SERVICE) as AlarmManager
-            am.cancel(it)
-            returnPendingIntent = null
-        }
     }
 
     override fun onDestroy() {
